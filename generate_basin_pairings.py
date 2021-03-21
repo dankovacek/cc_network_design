@@ -206,6 +206,7 @@ def extract_streamflow_series(stn):
     df.dropna(inplace=True)
     return df
 
+
 def get_concurrence_length_and_COD(pair):
     df1 = extract_streamflow_series(pair[0])
     df1.rename(mapper={'discharge': f'{pair[0]}'}, inplace=True, axis=1)
@@ -220,23 +221,53 @@ def get_concurrence_length_and_COD(pair):
     if len(concurrent_df) > 364:
         try:
             out = st.linregress(a1, a2) 
-            return len(concurrent_df), out[2]**2   
+            return pair[0], pair[1], len(concurrent_df), out[2]**2   
         except Exception as ex:
             print('regression attempt failed')
-            return len(concurrent_df), np.nan
+            return pair[0], pair[1], len(concurrent_df), np.nan
     else:
-        return len(concurrent_df), np.nan
+        return pair[0], pair[1], len(concurrent_df), np.nan
 
+
+def tidy_up_results(result):
+    b1 = [e[0] for e in result]
+    b2 = [e[1] for e in result]
+    concurrent_length_array = [e[2] for e in result]
+    cod_array = [e[3] for e in result]    
+
+    print(f'    ...Time to calculate {len(result)} concurrent period lengths and CODs: {t1 - t0:.1f} s')
+
+    out_df = pd.DataFrame()
+    out_df['b1'] = b1
+    out_df['b2'] = b2
+    out_df['concurrent_length_days'] = concurrent_length_array
+    out_df['similarity'] = cod_array
+    # out_df['distance'] = distance_array
+
+    # foo_df = pd.DataFrame()
+    # foo_df['similarity'] = cod_array
+    # foo_df['concurrent_len_days'] = concurrent_length_array
+
+    # combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
+    out_df = out_df[~out_df['similarity'].isna()]
+
+    # combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
+    out_df = out_df[out_df['concurrent_length_days'] > 364]
+
+    print(f'    ...{len(out_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+    # print(f'{len(foo_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+    return out_df
 
 print('')
 print('#######################')
 print('')
 
+print(f'len combined pairs list = {len(combined_pairs_list)}')
+
 combined_pair_df = pd.DataFrame(combined_pairs_list, columns=['b1', 'b2'])
 
-
 n_chunk = 0
-chunksize = int(2E5)
+chunksize = int(1E3)
 
 for i in range(0, len(combined_pairs_list), chunksize):
     n_chunk += 1
@@ -254,30 +285,12 @@ for i in range(0, len(combined_pairs_list), chunksize):
 
         print(f'    ...chunk {n_chunk} completed.')
 
-        concurrent_length_array = [e[0] for e in result]
-        cod_array = [e[1] for e in result]
-
-        print(f'    ...Time to calculate {len(combined_pairs_list)} concurrent period lengths and CODs: {t1 - t0:.1f} s')
-
-        combined_pair_df['concurrent_length_days'] = concurrent_length_array
-        combined_pair_df['similarity'] = cod_array
-        # foo_df = pd.DataFrame()
-        # foo_df['similarity'] = cod_array
-        # foo_df['concurrent_len_days'] = concurrent_length_array
-
-        combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
-        # foo_df = foo_df[~foo_df['similarity'].isna()]
-
-        # print(foo_df.head())
-
-        combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
-        print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
-        # print(f'{len(foo_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+        formatted_result = tidy_up_results(result)
 
         # write the list of unique pairs to disk so you 
         # don't have to go through that process again
-        combined_pair_df.to_pickle('results/COMBINED_pairs_min365d_output.csv')
-        # foo_df.to_pickle(f'results/COMBINED_pairs_min365d_output_c{n_chunk}.csv')
+        # formatted_result.to_pickle('results/COMBINED_pairs_min365d_output.csv')
+        formatted_result.to_pickle(f'results/COMBINED_pairs_min365d_output_c{n_chunk}.csv')
 
         t_hours = (t1 - t0) / 3600
         
