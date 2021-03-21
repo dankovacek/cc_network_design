@@ -260,6 +260,7 @@ try:
 
 
 except Exception as ex:
+    print(ex)
     msg = str(ex)[:25]
     
     message = client.messages \
