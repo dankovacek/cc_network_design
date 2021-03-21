@@ -1,9 +1,12 @@
 import os
 import time
+import datetime
 
 import pandas as pd
 import numpy as np
-import xarray as xr
+# import xarray as xr
+
+import pytz
 
 import scipy.stats as st
 
@@ -15,10 +18,11 @@ import geopandas as gpd
 import multiprocessing as mp
 from multiprocessing import Pool
 
-
 from notification_alert import client
 
-production = True
+testing = True
+
+tz = pytz.timezone('America/Vancouver')
 
 print(f'{mp.cpu_count()} cores available')
 print('')
@@ -29,7 +33,7 @@ WSC_db_folder = '/media/danbot/T7 Touch/hydat_db/'
 hysets_folder = '/media/danbot/T7 Touch/hysets_series/'
 camels_folder = '/media/danbot/T7 Touch/camels_db/usgs_streamflow/'
 
-if production:
+if testing is False:
     # WSC_db_folder = '/media/danbot/T7 Touch/hydat_db/'
     # metadata_fn = 'WSC_Stations_Master.csv'
     hysets_folder = 'data/hysets_series/'
@@ -227,7 +231,15 @@ print('')
 
 combined_pair_df = pd.DataFrame(combined_pairs_list, columns=['b1', 'b2'])
 
+def run_calc_segment(chunk):
+    pass
+
+
 try:
+
+    if testing:
+        combined_pairs_list = combined_pairs_list[:1000]
+
     t0 = time.time()
     pool = Pool()
     result = pool.map(get_concurrence_length_and_COD, 
@@ -236,29 +248,43 @@ try:
     pool.join()
     t1 = time.time()
 
+    print('Calculation completed.')
+
     concurrent_length_array = [e[0] for e in result]
     cod_array = [e[1] for e in result]
 
-    print(f'Time to calculate 10000 concurrent period lengths and CODs: {t1 - t0:.1f} s')
+    # print(f'Time to calculate {len(combined_pairs_list)} concurrent period lengths and CODs: {t1 - t0:.1f} s')
 
-    combined_pair_df['concurrent_length_days'] = concurrent_length_array
-    combined_pair_df['similarity'] = cod_array
 
-    combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
+    # combined_pair_df['concurrent_length_days'] = concurrent_length_array
+    # combined_pair_df['similarity'] = cod_array
+    foo_df = pd.DataFrame()
+    foo_df['similarity'] = cod_array
+    foo_df['concurrent_len_days'] = concurrent_length_array
+
+    # combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
+    foo_df = foo_df[foo_df['similarity'].isna()]
+
+    print(foo_df.head())
 
     # combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
-    print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+    # print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+    print(f'{len(foo_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
 
     # write the list of unique pairs to disk so you 
     # don't have to go through that process again
-    combined_pair_df.to_pickle('results/COMBINED_pairs_min365d_output.csv')
+    # combined_pair_df.to_pickle('results/COMBINED_pairs_min365d_output.csv')
+    foo_df.to_pickle('results/COMBINED_pairs_min365d_output_test.csv')
 
     t_hours = (t1 - t0) / 3600
+    
+    utc_time = datetime.datetime.utcnow()
+    local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
 
 
     message = client.messages \
                     .create(
-                        body=f"Code Run completed in {t_hours:.1f}. Huzzah!",
+                        body=f"{local_time}: Code Run completed in {t_hours:.1f}h. Huzzah!",
                         from_='+16048006923',
                         to='+16048420619'
                     )
@@ -267,10 +293,14 @@ try:
 except Exception as ex:
     print(ex)
     msg = str(ex)[:25]
+
+    utc_time = datetime.datetime.utcnow()
+
+    local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
     
     message = client.messages \
                     .create(
-                        body=f"Code run failed. {msg}",
+                        body=f"{local_time}: Code run failed. {msg}",
                         from_='+16048006923',
                         to='+16048420619'
                     )
