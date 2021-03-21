@@ -20,7 +20,7 @@ from multiprocessing import Pool
 
 from notification_alert import client
 
-testing = True
+testing = False
 
 tz = pytz.timezone('America/Vancouver')
 
@@ -239,6 +239,8 @@ try:
 
     if testing:
         combined_pairs_list = combined_pairs_list[:1000]
+
+    combined_pairs_list = combined_pairs_list[:1000]
 
     t0 = time.time()
     pool = Pool()
