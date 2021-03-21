@@ -1,2 +1,5 @@
 results/
 .ipynb_checkpoints/
+.env
+.envrc
+references/
