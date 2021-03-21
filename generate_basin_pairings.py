@@ -231,7 +231,7 @@ try:
     t0 = time.time()
     pool = Pool()
     result = pool.map(get_concurrence_length_and_COD, 
-                combined_pairs_list[:1000])
+                combined_pairs_list)
     pool.close()
     pool.join()
     t1 = time.time()
