@@ -228,8 +228,10 @@ try:
 
     print(f'Time to calculate concurrent period lengths: {t1 - t0:.1f}')
 
-    # combined_pair_df['concurrent_length_days'] = concurrent_length_array
-    # combined_pair_df['similarity'] = cod_array
+    combined_pair_df['concurrent_length_days'] = concurrent_length_array
+    combined_pair_df['similarity'] = cod_array
+
+    combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
 
     # combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
     print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
@@ -240,7 +242,6 @@ try:
 
     t_hours = (t1 - t0) / 3600
 
-    print(asdfsd)
 
     message = client.messages \
                     .create(
@@ -252,7 +253,7 @@ try:
 
 except Exception as ex:
     msg = str(ex)[:25]
-    print(asdf)
+    
     message = client.messages \
                     .create(
                         body=f"Code run failed. {msg}",

@@ -30,6 +30,12 @@ direnv: loading .envrc
 direnv export: +FOO
 ```
 
+>Reload the source. This will set the environment variables.
+```
+$ source .envrc
+```
+
+
 >Show that the FOO environment variable is loaded.
 ```
 $ echo ${FOO-nope}
