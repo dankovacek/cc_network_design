@@ -240,7 +240,7 @@ try:
     if testing:
         combined_pairs_list = combined_pairs_list[:1000]
 
-    combined_pairs_list = combined_pairs_list[:1000]
+    combined_pairs_list = combined_pairs_list[:10000]
 
     t0 = time.time()
     pool = Pool()
