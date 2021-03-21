@@ -226,7 +226,7 @@ try:
     t0 = time.time()
     pool = Pool()
     result = pool.map(get_concurrence_length_and_COD, 
-                combined_pairs_list[:100])
+                combined_pairs_list[:1000])
     pool.close()
     pool.join()
     t1 = time.time()
@@ -234,7 +234,7 @@ try:
     concurrent_length_array = [e[0] for e in result]
     cod_array = [e[1] for e in result]
 
-    print(f'Time to calculate concurrent period lengths: {t1 - t0:.1f}')
+    print(f'Time to calculate 10000 concurrent period lengths and CODs: {t1 - t0:.1f} s')
 
     combined_pair_df['concurrent_length_days'] = concurrent_length_array
     combined_pair_df['similarity'] = cod_array
