@@ -27,8 +27,8 @@ camels_folder = '/media/danbot/T7 Touch/camels_db/usgs_streamflow/'
 if production:
     # WSC_db_folder = '/media/danbot/T7 Touch/hydat_db/'
     # metadata_fn = 'WSC_Stations_Master.csv'
-    hysets_folder = '/data/hysets_series/'
-    camels_folder = '/data/camels_db/usgs_streamflow/'
+    hysets_folder = 'data/hysets_series/'
+    camels_folder = 'data/camels_db/usgs_streamflow/'
 
 # create a list of all pairs of basins in the camels database
 # note that all filenames are 8 digits long
