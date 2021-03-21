@@ -231,79 +231,74 @@ print('')
 
 combined_pair_df = pd.DataFrame(combined_pairs_list, columns=['b1', 'b2'])
 
-def run_calc_segment(chunk):
-    pass
+
+n_chunk = 0
+for i in range(0, len(combined_pairs_list), 100000):
+    chunk = combined_pairs_list[i:i + 100]
+    try:
+        print(f'Starting chunk {n_chunk}')
+
+        t0 = time.time()
+        pool = Pool()
+        result = pool.map(get_concurrence_length_and_COD, 
+                    chunk)
+        pool.close()
+        pool.join()
+        t1 = time.time()
+
+        print(f'    ...chunk {n_chunk} completed.')
+
+        concurrent_length_array = [e[0] for e in result]
+        cod_array = [e[1] for e in result]
+
+        # print(f'Time to calculate {len(combined_pairs_list)} concurrent period lengths and CODs: {t1 - t0:.1f} s')
+
+        # combined_pair_df['concurrent_length_days'] = concurrent_length_array
+        # combined_pair_df['similarity'] = cod_array
+        foo_df = pd.DataFrame()
+        foo_df['similarity'] = cod_array
+        foo_df['concurrent_len_days'] = concurrent_length_array
+
+        # combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
+        foo_df = foo_df[foo_df['similarity'].isna()]
+
+        print(foo_df.head())
+
+        # combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
+        # print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+        print(f'{len(foo_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
+
+        # write the list of unique pairs to disk so you 
+        # don't have to go through that process again
+        # combined_pair_df.to_pickle('results/COMBINED_pairs_min365d_output.csv')
+        foo_df.to_pickle(f'results/COMBINED_pairs_min365d_output_c{n_chunk}.csv')
+
+        t_hours = (t1 - t0) / 3600
+        
+        utc_time = datetime.datetime.utcnow()
+        local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
 
 
-try:
-
-    if testing:
-        combined_pairs_list = combined_pairs_list[:1000]
-
-    combined_pairs_list = combined_pairs_list[:10000]
-
-    t0 = time.time()
-    pool = Pool()
-    result = pool.map(get_concurrence_length_and_COD, 
-                combined_pairs_list)
-    pool.close()
-    pool.join()
-    t1 = time.time()
-
-    print('Calculation completed.')
-
-    concurrent_length_array = [e[0] for e in result]
-    cod_array = [e[1] for e in result]
-
-    # print(f'Time to calculate {len(combined_pairs_list)} concurrent period lengths and CODs: {t1 - t0:.1f} s')
+        message = client.messages \
+                        .create(
+                            body=f"{local_time}: Code Run completed in {t_hours:.1f}h. Huzzah!",
+                            from_='+16048006923',
+                            to='+16048420619'
+                        )
 
 
-    # combined_pair_df['concurrent_length_days'] = concurrent_length_array
-    # combined_pair_df['similarity'] = cod_array
-    foo_df = pd.DataFrame()
-    foo_df['similarity'] = cod_array
-    foo_df['concurrent_len_days'] = concurrent_length_array
+    except Exception as ex:
+        print(ex)
+        msg = str(ex)[:25]
 
-    # combined_pair_df = combined_pair_df[combined_pair_df['similarity'].isna()]
-    foo_df = foo_df[foo_df['similarity'].isna()]
+        utc_time = datetime.datetime.utcnow()
 
-    print(foo_df.head())
-
-    # combined_pair_df = combined_pair_df[combined_pair_df['concurrent_days'] > 364]
-    # print(f'{len(combined_pair_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
-    print(f'{len(foo_df)} basin pairs meet the concurrence length, basin area, and characteristic information criteria.')
-
-    # write the list of unique pairs to disk so you 
-    # don't have to go through that process again
-    # combined_pair_df.to_pickle('results/COMBINED_pairs_min365d_output.csv')
-    foo_df.to_pickle('results/COMBINED_pairs_min365d_output_test.csv')
-
-    t_hours = (t1 - t0) / 3600
-    
-    utc_time = datetime.datetime.utcnow()
-    local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
-
-
-    message = client.messages \
-                    .create(
-                        body=f"{local_time}: Code Run completed in {t_hours:.1f}h. Huzzah!",
-                        from_='+16048006923',
-                        to='+16048420619'
-                    )
-
-
-except Exception as ex:
-    print(ex)
-    msg = str(ex)[:25]
-
-    utc_time = datetime.datetime.utcnow()
-
-    local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
-    
-    message = client.messages \
-                    .create(
-                        body=f"{local_time}: Code run failed. {msg}",
-                        from_='+16048006923',
-                        to='+16048420619'
-                    )
+        local_time = pytz.utc.localize(utc_time).astimezone(tz).strftime('%Y-%m-%d %H:%M')
+        
+        message = client.messages \
+                        .create(
+                            body=f"{local_time}: Code run failed. {msg}",
+                            from_='+16048006923',
+                            to='+16048420619'
+                        )
 
