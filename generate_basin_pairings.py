@@ -236,7 +236,7 @@ combined_pair_df = pd.DataFrame(combined_pairs_list, columns=['b1', 'b2'])
 
 
 n_chunk = 0
-chunksize = 2E5
+chunksize = int(2E5)
 
 for i in range(0, len(combined_pairs_list), chunksize):
     n_chunk += 1
