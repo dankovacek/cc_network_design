@@ -12,13 +12,15 @@ from itertools import combinations
 from shapely.geometry import Point
 import geopandas as gpd
 
+import multiprocessing as mp
 from multiprocessing import Pool
+
 
 from notification_alert import client
 
 production = True
 
-print(f'{multiprocessing.cpu_count()} cores available')
+print(f'{mp.cpu_count()} cores available')
 print('')
 
 # import basin characteristics
