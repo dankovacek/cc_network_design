@@ -20,7 +20,7 @@ from multiprocessing import Pool
 
 from notification_alert import client
 
-testing = True
+testing = False
 
 tz = pytz.timezone('America/Vancouver')
 
