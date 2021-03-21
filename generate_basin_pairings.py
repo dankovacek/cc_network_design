@@ -18,6 +18,9 @@ from notification_alert import client
 
 production = True
 
+print(f'{multiprocessing.cpu_count()} cores available')
+print('')
+
 # import basin characteristics
 WSC_db_folder = '/media/danbot/T7 Touch/hydat_db/'
 # metadata_fn = 'WSC_Stations_Master.csv'
