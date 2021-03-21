@@ -267,7 +267,7 @@ print(f'len combined pairs list = {len(combined_pairs_list)}')
 combined_pair_df = pd.DataFrame(combined_pairs_list, columns=['b1', 'b2'])
 
 n_chunk = 0
-chunksize = int(1E3)
+chunksize = int(1E5)
 
 for i in range(0, len(combined_pairs_list), chunksize):
     n_chunk += 1
