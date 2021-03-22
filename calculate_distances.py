@@ -20,11 +20,10 @@ from multiprocessing import Pool
 
 from notification_alert import client
 
-production = False #True
 
-hysets_folder = '/media/danbot/T7 Touch/hysets_series/'
-if production:
-    hysets_folder = 'data/hysets_series/'
+# hysets_folder = '/media/danbot/T7 Touch/hysets_series/'
+# if production:
+#     hysets_folder = 'data/hysets_series/'
 
 hysets_df = pd.read_csv('data/HYSETS_watershed_properties.txt', sep=';', dtype={'Official_ID': str})
 
@@ -48,9 +47,9 @@ basin_characteristics_cols = ['Centroid_Lat_deg_N', 'Centroid_Lon_deg_E',
 
 hysets_dict = hysets_df[basin_metadata + basin_centroid_geom + basin_characteristics_cols].set_index('Official_ID').to_dict(orient='index')
 
-all_df = pd.read_pickle('results/filtered_pairs_CAMELS_all_concurrent_lengths.csv')
-all_df.drop(labels=['char_check'], axis=1, inplace=True)
 
+results_fnames = os.listdir('results/')
+results_fnames = [f'results/{e}' for e in results_fnames if "COMBINED_pairs" in e]
 
 def calculate_pair_centroid_distance(pair):
     pair_df = hysets_df[hysets_df['Official_ID'].isin(pair)]
@@ -62,16 +61,26 @@ def calculate_pair_centroid_distance(pair):
 
 def create_line(row):
     return geom.LineString([hysets_dict[row['b1']]['centroid_geom'], hysets_dict[row['b2']]['centroid_geom']])
+
+
+all_dfs = []
+
+for r in results_fnames:
+
+    print(r)
+    df = pd.read_pickle(r)
+        
+    geometry = gpd.GeoDataFrame({'geometry': df.apply(lambda row: create_line(row), axis=1)}, crs='EPSG:4326')
+
+    geometry = geometry.to_crs(3005)
+    geometry['centroid_distance_km'] = geometry.length / 1000  # convert to km
+
+    df['distance_btwn_centroids_km'] = geometry['centroid_distance_km']
+    df = df[df['distance_btwn_centroids_km'] < 1000]
     
-geometry = gpd.GeoDataFrame({'geometry': all_df.apply(lambda row: create_line(row), axis=1)}, crs='EPSG:4326')
+    all_dfs.append(df)
 
-geometry = geometry.to_crs(3005)
-geometry['centroid_distance_km'] = geometry.length / 1000  # convert to km
-
-all_df['distance_btwn_centroids_km'] = geometry['centroid_distance_km']
-
-print(len(all_df))
-all_df = all_df[all_df['distance_btwn_centroids_km'] < 1000]
-print(len(all_df))
-
-# all_df.to_pickle('data/CAMELS_pairs_min365dConc_max1000kmDistance.csv')
+combined_df = pd.concat(all_dfs)
+print(combined_df.head())
+print(len(combined_df))
+combined_df.to_pickle('results/FINAL_SET_HYSETS_PAIRS.csv')
